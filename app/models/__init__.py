@@ -1,6 +1,19 @@
-from sqlalchemy.ext.declarative import declarative_base
+# app/models/__init__.py
 
-Base = declarative_base()
+#from sqlalchemy.ext.declarative import declarative_base
+#from app.models.session import Session
+#from app.models import User as UserModel  # Importing UserModel consistently
+#from app.database import Base
+
+
+#Base = declarative_base()
 
 # Ensure you also import all your models here to register them with SQLAlchemy
-from .user import User  # example model, adjust according to your actual models
+#from .user import User  # example model, adjust according to your actual models
+
+#from app.models.user import User as UserModel  # Ensure UserModel is imported consistently
+from .session import Session
+from app.database import Base
+
+__all__ = ["Session", "Base"]
+
