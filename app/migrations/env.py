@@ -18,8 +18,12 @@ fileConfig(config.config_file_name)
 
 # add your model's MetaData object here
 # for 'autogenerate' support
-from app.models.base import Base  # Ensure 'Base' is correctly imported from your models
-target_metadata = Base.metadata
+from app.database import BaseModel
+from app.models.user import UserModel  # Ensure 'Base' is correctly imported from your models
+from app.models.session import Session
+from app.models.vendor import VendorModel
+from app.models.admin import AdminModel
+target_metadata = BaseModel.metadata
 
 
 # other values from the config, defined by the needs of env.py, can be acquired:

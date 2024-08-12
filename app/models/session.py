@@ -1,11 +1,11 @@
 from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Boolean
 from sqlalchemy.orm import relationship
-from app.database import Base
+from app.database import BaseModel  # Ensure this is BaseModel now
 from app.models.user import UserModel
 import uuid
 from datetime import datetime
 
-class Session(Base):
+class Session(BaseModel):  # Change Base to BaseModel
     __tablename__ = "sessions"
 
     id = Column(Integer, primary_key=True, index=True)
