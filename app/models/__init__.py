@@ -12,11 +12,11 @@
 #from .user import User  # example model, adjust according to your actual models
 
 #from app.models.user import User as UserModel  # Ensure UserModel is imported consistently
-from .session import Session
+from app.models.session import Session
 from app.database import BaseModel
-from .admin import AdminModel
-from .user import UserModel
-from .vendor import VendorModel
+from app.models.admin import AdminModel
+from app.models.user import UserModel
+from app.models.vendor import VendorModel
 
 __all__ = ["Session", "BaseModel", "AdminModel", "UserModel", "VendorModel" ]
 

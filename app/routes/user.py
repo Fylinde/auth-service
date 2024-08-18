@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Security
+from fastapi import APIRouter, Depends, HTTPException, status, Security, Request
 from sqlalchemy.orm import Session
 from jose import jwt, JWTError
 from datetime import timedelta, datetime
@@ -53,6 +53,7 @@ from app.security import (
 )
 from app.models.session import Session as SessionModel
 from app.database import SessionLocal, get_db
+from app.utils.rabbitmq import publish_user_created_event
 
 
 router = APIRouter()
@@ -69,85 +70,78 @@ def get_db():
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-logger = logging.getLogger(__name__)
+#logger = logging.getLogger(__name__)
 
 
 import logging
 import requests
 from fastapi import HTTPException
 
-logger = logging.getLogger(__name__)
+# Set up logging
+logger = logging.getLogger("auth_service")
+logging.basicConfig(level=logging.INFO)
 
-def register_user_in_user_service(user_data):
-    try:
-        user_service_url = "http://user-service:8001/users/"
-        response = requests.post(user_service_url, json=user_data)
-        response.raise_for_status()
-        logging.info(f"User created in user-service: {user_data['username']}")
-    except requests.exceptions.RequestException as e:
-        logging.error(f"Failed to create user in user-service: {e}")
-        raise HTTPException(status_code=500, detail="Failed to create user in user-service")
+#def register_user_in_user_service(user_data):
+#    try:
+#        user_service_url = "http://user-service:8001/users/"
+#        response = requests.post(user_service_url, json=user_data)
+#        response.raise_for_status()
+#        logging.info(f"User created in user-service: {user_data['username']}")
+#    except requests.exceptions.RequestException as e:
+#        logging.error(f"Failed to create user in user-service: {e}")
+#        raise HTTPException(status_code=500, detail="Failed to create user in user-service")
 
-@router.post("/register")
-def register_user(user: UserCreate, db: Session = Depends(get_db)):
-    # Check if user exists in the auth-service database
-    db_user = db.query(UserModel).filter(UserModel.email == user.email).first()
-    if db_user:
-        raise HTTPException(status_code=400, detail="Email already registered")
+#@router.post("/register")
 
-    # Hash the password before sending it to user-service
-    hashed_password = get_password_hash(user.password)
+#def publish_user_created_event(user_data):
+ #   try:
+ #       connection = pika.BlockingConnection(pika.ConnectionParameters(host='rabbitmq'))
+ #       channel = connection.channel()
+ #       channel.exchange_declare(exchange='user_events', exchange_type='fanout')
+ #       channel.basic_publish(exchange='user_events', routing_key='', body=json.dumps(user_data))
+#        connection.close()
+#        logger.info(f"User created event published to RabbitMQ for user: {user_data['email']}")
+#    except Exception as e:
+ #       logger.error(f"Failed to publish user created event: {e}")
+
     
-    # Generate a Two-Factor Authentication secret
-    two_factor_secret = pyotp.random_base32()
 
-    # Prepare the user data for user-service
-    user_data = {
-        "username": user.username,
-        "email": user.email,
-        "password": hashed_password,  # Send the hashed password
-        "profile_picture": user.profile_picture,
-        "preferences": user.preferences
-    }
+@router.post("/register", response_model=UserResponse)
+def register_user(user: UserCreate, db: Session = Depends(get_db)):
+    # Check if the user already exists
+    existing_user = db.query(UserModel).filter((UserModel.username == user.username) | (UserModel.email == user.email)).first()
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Username or Email already registered")
 
-    # Create user in user-service
-    register_user_in_user_service(user_data)
-
-    # Create user in auth-service
-    new_user = UserModel(
+    # Create the user
+    user_obj = UserModel(
         username=user.username,
         email=user.email,
-        hashed_password=hashed_password,  # Store the hashed password in auth-service
-        role="user",  # Default role
-        password_last_updated=datetime.utcnow(),
-        two_factor_secret=two_factor_secret  # Store the 2FA secret in the database
+        hashed_password=pwd_context.hash(user.password),
     )
-    db.add(new_user)
+    db.add(user_obj)
     db.commit()
-    db.refresh(new_user)
-    
-    # Publish event to RabbitMQ
+    db.refresh(user_obj)
+
+    # Log user creation
+    logger.info(f"User created in auth-service: {user_obj.username} (ID: {user_obj.id})")
+
+    # Publish the event
+    user_data = {
+        "id": user_obj.id,
+        "username": user_obj.username,
+        "email": user_obj.email,
+        "hashed_password": user_obj.hashed_password,
+        "profile_picture": user.profile_picture,
+        "preferences": user.preferences,
+        "two_factor_enabled": user_obj.two_factor_enabled,
+        "two_factor_secret": user_obj.two_factor_secret,
+    }
     publish_user_created_event(user_data)
 
-    logging.info(f"Generated 2FA secret for {user.username}: {two_factor_secret}")
-    logging.info(f"Role for {user.username}: {new_user.role}")
-    
-    return new_user
+    return user_obj
 
-def publish_user_created_event(user_data):
-    connection = pika.BlockingConnection(pika.ConnectionParameters('rabbitmq'))
-    channel = connection.channel()
 
-    channel.queue_declare(queue='user_created')
-
-    channel.basic_publish(
-        exchange='',
-        routing_key='user_created',
-        body=json.dumps(user_data)
-    )
-
-    connection.close()
-    
 @router.post("/login", response_model=Token)
 def login(payload: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     user = db.query(UserModel).filter(UserModel.email == payload.username).first()
@@ -459,3 +453,4 @@ def update_profile(user_update: UserUpdate, db: Session = Depends(get_db), curre
     db.commit()
     db.refresh(db_user)
     return db_user
+

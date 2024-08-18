@@ -6,6 +6,7 @@ load_dotenv()
 
 
 class Settings:
+    RABBITMQ_HOST: str = "rabbitmq"  # Default to the RabbitMQ service name in Docker Compose
     SECRET_KEY = os.getenv("SECRET_KEY", "DbSLoIREJtu6z3CVnpTd_DdFeMMRoteCU0UjJcNreZI")
     PROJECT_NAME: str = "Auth Service"
     PROJECT_VERSION: str = "1.0.0"
