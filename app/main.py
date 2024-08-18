@@ -37,3 +37,8 @@ async def log_request(request: Request, call_next):
 @app.get("/protected")
 async def protected(current_user: user.User = Depends(auth.get_current_user)):
     return {"message": "This is a protected endpoint", "user": current_user.username}
+
+
+# ReDoc: http://localhost:8001/redoc
+# http://localhost:8001/docs
+# http://localhost:8000/openapi.json
