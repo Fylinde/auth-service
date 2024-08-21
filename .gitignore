@@ -73,7 +73,7 @@ dmypy.json
 *.sql
 
 # Alembic
-alembic/versions
+migrations/versions
 
 # Docker
 docker-compose.override.yml
