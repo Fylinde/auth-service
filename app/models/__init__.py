@@ -1,22 +1,13 @@
 # app/models/__init__.py
 
-#from sqlalchemy.ext.declarative import declarative_base
-#from app.models.session import Session
-#from app.models import User as UserModel  # Importing UserModel consistently
-#from app.database import Base
+from app.models.session import SessionModel
+from app.database import BaseModel   # or Base if that's what your models inherit from
+from app.models.otp import OTPModel
 
-
-#Base = declarative_base()
-
-# Ensure you also import all your models here to register them with SQLAlchemy
-#from .user import User  # example model, adjust according to your actual models
-
-#from app.models.user import User as UserModel  # Ensure UserModel is imported consistently
-from app.models.session import Session
-from app.database import BaseModel
-from app.models.admin import AdminModel
-from app.models.user import UserModel
-from app.models.vendor import VendorModel
-
-__all__ = ["Session", "BaseModel", "AdminModel", "UserModel", "VendorModel" ]
+#
+__all__ = ["SessionModel", 
+           "BaseModel",  
+           "OTPModel" 
+   
+           ]
 

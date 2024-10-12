@@ -7,6 +7,9 @@ class SessionCreate(BaseModel):
     expires_at: datetime
     is_valid: bool
 
+    class Config:
+        orm_mode = True  # Ensure compatibility with ORM models
+
 class SessionResponse(BaseModel):
     id: int
     user_id: int
@@ -16,4 +19,3 @@ class SessionResponse(BaseModel):
 
     class Config:
         orm_mode = True
-        

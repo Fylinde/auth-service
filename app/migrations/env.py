@@ -5,7 +5,8 @@ import os
 import sys
 
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
+
 
 
 # this is the Alembic Config object, which provides access to the values within the .ini file in use.
@@ -18,11 +19,8 @@ fileConfig(config.config_file_name)
 
 # add your model's MetaData object here
 # for 'autogenerate' support
-from app.database import BaseModel
-from app.models.user import UserModel  # Ensure 'Base' is correctly imported from your models
-from app.models.session import Session
-from app.models.vendor import VendorModel
-from app.models.admin import AdminModel
+from app.database import BaseModel  # or Base if that's what your models inherit from
+from app.models import *
 target_metadata = BaseModel.metadata
 
 
@@ -50,7 +48,8 @@ def run_migrations_offline():
 def run_migrations_online():
     """Run migrations in 'online' mode."""
     connectable = engine_from_config(
-        config.get_section(config.config_ini_section), prefix="sqlalchemy.", poolclass=pool.NullPool
+        config.get_section(config.config_ini_section), prefix="sqlalchemy.", poolclass=pool.NullPool,
+        echo=True  # Enable SQL statement logging
     )
 
 

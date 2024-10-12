@@ -10,11 +10,11 @@ class UnlockAccountRequest(BaseModel):
     email: EmailStr       
     
 class RoleUpdate(BaseModel):
-    username: str
+    full_name: str
     role: str    
     
 class AdminCreate(BaseModel):
-    username: str
+    full_name: str
     email: str
     password: str
     secret_key: str  # Add secret_key to the body    

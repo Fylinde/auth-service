@@ -22,3 +22,5 @@ aiosqlite
 rich
 typing-extensions
 pika
+Werkzeug
+uuid

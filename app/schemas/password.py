@@ -1,5 +1,3 @@
-# auth-service/app/schemas/password.py
-
 from pydantic import BaseModel, EmailStr
 
 class PasswordResetRequest(BaseModel):
@@ -18,4 +16,3 @@ class PasswordResetTokenVerification(BaseModel):
 
 class PasswordResetResponse(BaseModel):
     message: str
-

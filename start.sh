@@ -19,6 +19,19 @@ fi
 # Log PostgreSQL readiness
 echo "PostgreSQL is ready."
 
+
+# Wait for RabbitMQ to be ready
+echo "Waiting for RabbitMQ server to be available..."
+./wait-for-it.sh rabbitmq:5672 --timeout=180 --strict
+
+if [ $? -ne 0 ]; then
+  echo "RabbitMQ is not ready. Exiting..."
+  exit 1
+fi
+
+# Log RabbitMQ readiness
+echo "RabbitMQ is ready."
+
 # Set the PYTHONPATH environment variable
 export PYTHONPATH=/app
 echo "PYTHONPATH is set to $PYTHONPATH"
