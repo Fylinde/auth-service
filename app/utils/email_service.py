@@ -3,7 +3,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import logging
 from itsdangerous import URLSafeTimedSerializer
-import uuid
+
 from app.config import settings
 
 # Initialize the URLSafeTimedSerializer with a secret key

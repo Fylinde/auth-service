@@ -9,23 +9,19 @@ from app.services.user_auth import (
 )
 
 from app.schemas.auth_schemas import (
-    UserLogin, 
     TwoFactorVerifyRequest, 
     TokenResponse 
 
 )
 
 
-from app.schemas.auth_schemas import UserLogin, SessionCreate
-from app.services.auth_registration_service import authenticate_user_service
-from app.services.user_auth import verify_user_email
-from app.crud.user_crud import verify_user_code
+from app.schemas.auth_schemas import SessionCreate
 from fastapi.security import OAuth2PasswordRequestForm
-from app.services.auth_login_service import login_service, verify_otp_code
-from app.schemas.two_factor import Enable2FARequest, MessageResponse, OTPRequest, OTPVerifyRequest
+from app.services.auth_login_service import verify_otp_code
+from app.schemas.two_factor import Enable2FARequest, MessageResponse, OTPRequest
 from app.services.auth_login_service import get_user_by_contact, enable_user_2fa, disable_user_2fa, create_access_token, create_refresh_token
 from app.security import oauth2_scheme
-from app.utils.token_utils import get_user_id_from_token, generate_verification_code, generate_otp, generate_and_store_otp
+from app.utils.token_utils import get_user_id_from_token, generate_otp, generate_and_store_otp
 from app.utils.email_service import send_otp_to_contact 
 from app.services.auth_login_service import verify_user_credentials
 from datetime import timedelta
@@ -34,11 +30,12 @@ import os
 from app.services.logout_service import logout_user_service
 from app.schemas.logout import LogoutRequest, LogoutResponse 
 from app.crud.session_crud import create_session
-from datetime import timedelta, datetime
+from datetime import datetime
 from fastapi.responses import RedirectResponse
 import requests
 import logging
-
+from app.schemas.otp_schemas import OTPResponse 
+from app.utils.token_utils import save_otp_to_database
 router = APIRouter()
 
 SECRET_KEY = os.getenv("SECRET_KEY", settings.SECRET_KEY)
@@ -65,34 +62,61 @@ def delete_user_account(token: str):
 def verify_2fa_user(request: TwoFactorVerifyRequest, db: Session = Depends(get_db)):
     return verify_2fa_and_issue_tokens(user_id=request.user_id, code=request.code, db=db)
 
-@router.get("/verify", summary="Verify user email with a code")
-async def verify_email(code: str = Query(..., description="Verification code")):
+
+@router.get("/verify", response_model=TokenResponse, summary="Verify user email with a code")
+async def verify_email(
+    code: str = Query(..., description="Verification code", min_length=4, max_length=6),
+    redirect: bool = Query(False, description="Redirect to frontend with token")
+):
     user_service_url = f"{USER_SERVICE_URL}/verify-code?code={code}"
     logging.info(f"Attempting to verify code via user-service: {user_service_url}")
     
     try:
+        # Request verification from user-service
         response = requests.get(user_service_url)
         response.raise_for_status()
         verification_data = response.json()
-        logging.info(f"User-service response: {verification_data}")
+        logging.info(f"User-service response data: {verification_data}")
         
-        if verification_data.get("verified"):
+        # Check if verification was successful
+        verification_success = verification_data.get("verified", False)
+        
+        if verification_success:
             user_id = verification_data["user"]["id"]
-            access_token = create_access_token(data={"user_id": user_id})
-            redirect_url = f"http://localhost:3000/user-dashboard?token={access_token}"
-            return RedirectResponse(url=redirect_url)
-        else:
-            logging.error("Verification failed as user-service did not return verified status.")
-            raise HTTPException(status_code=400, detail="Verification failed.")
+            is_admin = verification_data["user"].get("is_admin", False)
+            logging.info(f"User {user_id} verified successfully, is_admin: {is_admin}")
             
+            # Generate tokens
+            access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+            access_token = create_access_token(
+                data={"user_id": user_id, "is_admin": is_admin}, 
+                expires_delta=access_token_expires
+            )
+            refresh_token_expires = timedelta(days=7)
+            refresh_token = create_refresh_token(
+                data={"user_id": user_id}, 
+                expires_delta=refresh_token_expires
+            )
+            
+            if redirect:
+                # Redirect to frontend with tokens in the URL
+                frontend_url = f"http://localhost:3000/user-dashboard?access_token={access_token}&refresh_token={refresh_token}"
+                return RedirectResponse(url=frontend_url)
+
+            # Return tokens directly if not redirecting
+            return {"access_token": access_token, "refresh_token": refresh_token, "token_type": "bearer"}
+        
+        logging.error("Verification failed: user not verified by user-service.")
+        raise HTTPException(status_code=400, detail="Verification failed.")
+    
     except requests.HTTPError as e:
-        logging.error(f"User-service returned an error: {e}")
-        raise HTTPException(status_code=404, detail="Verification failed: code not found.")
+        logging.error(f"Verification failed for code {code}: {e}")
+        raise HTTPException(status_code=response.status_code, detail="Verification failed: code not found.")
     except requests.RequestException as e:
-        logging.error(f"Connection to user-service failed: {e}")
+        logging.error(f"User-service connection error: {e}")
         raise HTTPException(status_code=500, detail="User-service unavailable.")
 
-
+    
 
 @router.post("/login", response_model=MessageResponse)
 def login(
@@ -128,17 +152,27 @@ def disable_2fa(
     response = disable_user_2fa(user_id)
     return {"message": response["message"]}
 
-@router.post("/send-otp", response_model=MessageResponse)
+@router.post("/send-otp", response_model=OTPResponse)
 def send_otp(
     request: OTPRequest,
-    token: str = Depends(oauth2_scheme)
+    token: str = Depends(oauth2_scheme),
+    db: Session = Depends(get_db)
 ):
     user_id = get_user_id_from_token(token)
     otp_code = generate_otp()
-    send_otp_to_contact(request.email or request.phone_number, otp_code)
-    return {"message": "OTP sent successfully"}
+    expires_at = datetime.utcnow() + timedelta(minutes=5)
 
-@router.post("/verify-otp")
+    # Save the OTP code in the database
+    save_otp_to_database(db, user_id, otp_code)
+
+    # Send the OTP to the user
+    send_otp_to_contact(request.email or request.phone_number, otp_code)
+    
+    return OTPResponse(otp_code=otp_code, expires_at=expires_at)
+
+
+
+@router.post("/verify-otp", response_model=TokenResponse)
 def verify_otp(contact: str = Form(...), otp: str = Form(...), db: Session = Depends(get_db)):
     # Fetch user data by contact
     user_data = get_user_by_contact(contact)
@@ -162,14 +196,13 @@ def verify_otp(contact: str = Form(...), otp: str = Form(...), db: Session = Dep
         expires_at=datetime.utcnow() + access_token_expires,
         is_valid=True
     )
-    # Store the session
     create_session(db, session_data)
 
-    return {
-        "access_token": access_token,
-        "refresh_token": refresh_token,
-        "token_type": "bearer"
-    }
+    return TokenResponse(
+        access_token=access_token,
+        refresh_token=refresh_token,
+        token_type="bearer"
+    )
 
     
 

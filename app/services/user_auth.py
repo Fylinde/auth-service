@@ -8,7 +8,7 @@ from app.schemas.auth_schemas import SessionCreate
 from sqlalchemy.orm import Session
 from app.crud.session_crud import create_session
 from app.config import settings
-from datetime import timedelta, datetime
+from datetime import timedelta
 from app.crud.user_crud import verify_user_code
 #from app.services.auth_registration_service import publish_user_to_rabbitmq
 import logging
@@ -27,7 +27,7 @@ ALGORITHM = os.getenv("ALGORITHM", settings.ALGORITHM)
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 15))  # Default to 15 minutes if not set
 
 # User-service URL (configured in environment)
-USER_SERVICE_URL = os.getenv("USER_SERVICE_URL", "http://user-service:8001/users")
+USER_SERVICE_URL = os.getenv("USER_SERVICE_URL", "http://localhost:8001/users")
 
 def authenticate_user(email: str, password: str):
     """

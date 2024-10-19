@@ -2,7 +2,7 @@ import requests
 from app.schemas.auth_schemas import UserLogin
 from fastapi import HTTPException
 
-USER_SERVICE_URL = "http://user-service:8001/users"
+USER_SERVICE_URL = "http://localhost:8001/users"
 
 def authenticate_user_service(user_data: UserLogin):
     response = requests.get(f"{USER_SERVICE_URL}/users/{user_data.email}")

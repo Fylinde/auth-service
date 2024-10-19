@@ -1,7 +1,5 @@
-import requests
+
 from app.utils.rabbitmq import RabbitMQConnection
-from datetime import datetime
-import os
 from fastapi import HTTPException
 from app.crud.session_crud import delete_session_by_token  # Assuming this exists to handle session invalidation
 from sqlalchemy.orm import Session

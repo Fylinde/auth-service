@@ -10,13 +10,7 @@ from app.services.vendor_auth import (
 
 from app.schemas.auth_schemas import VendorLogin, TwoFactorVerifyRequest, TokenResponse
 
-from app.schemas.auth_schemas import ( 
-    VendorRegistrationRequest,
-    RegistrationResponse
-                                      
-)
 
-from fastapi import HTTPException, status
 
 router = APIRouter()
 

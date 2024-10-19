@@ -7,7 +7,9 @@ import os
 from fastapi import HTTPException, Depends
 from jose import jwt, JWTError
 from app.crud.user_crud import create_otp_record
-
+from app.models.otp import OTPModel
+from sqlalchemy.orm import Session
+from datetime import datetime
 
 SECRET_KEY = os.getenv("SECRET_KEY", settings.SECRET_KEY)
 ALGORITHM = os.getenv("ALGORITHM", settings.ALGORITHM)
@@ -53,3 +55,27 @@ def generate_and_store_otp(db, user_id: str):
     create_otp_record(db, user_id, otp_code)
     
     return otp_code
+
+def save_otp_to_database(db: Session, user_id: str, otp_code: str, validity_duration: int = 300):
+    """
+    Save the OTP to the database.
+    
+    :param db: Database session.
+    :param user_id: The identifier for the user associated with this OTP.
+    :param otp_code: The OTP code to be stored.
+    :param validity_duration: Duration in seconds for OTP validity.
+    :return: The newly created OTP entry.
+    """
+    # Create an OTP entry instance
+    otp_entry = OTPModel(
+        user_id=user_id,
+        otp_code=otp_code,
+        created_at=datetime.utcnow()
+    )
+    
+    # Add and commit the new OTP entry to the database
+    db.add(otp_entry)
+    db.commit()
+    db.refresh(otp_entry)  # Refresh to get any updated data like generated ID
+    
+    return otp_entry  # Optionally return the OTP entry

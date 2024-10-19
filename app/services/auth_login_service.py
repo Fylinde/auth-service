@@ -1,14 +1,11 @@
 # services.py
 import requests
 from datetime import timedelta, datetime
-from jose import JWTError, jwt
-from fastapi import HTTPException, Depends
+from jose import  jwt
+from fastapi import HTTPException
 from sqlalchemy.orm import Session
-from app.crud.session_crud import create_session
-from app.schemas.auth_schemas import SessionCreate
 from app.config import settings
 import os
-from app.crud.user_crud import verify_and_delete_otp
 from app.models.otp import OTPModel
 import logging
 
@@ -57,44 +54,6 @@ def verify_user_credentials(username: str, password: str):
     # Assuming the user data includes contact information for sending OTP
     return response.json()
 
-def login_service(login_identifier: str, password: str, code: str, db: Session):
-    response = requests.post(
-        f"{USER_SERVICE_URL}/verify?code={code}",
-        headers={"Content-Type": "application/json"},
-        json={"identifier": login_identifier, "password": password}
-    )
-
-    if response.status_code != 200:
-        print("Error response from user-service:", response.text)
-        raise HTTPException(status_code=401, detail="Invalid credentials")
-
-    user_data = response.json()
-    user_id = user_data["id"]
-    is_admin = user_data.get("is_admin", False)
-
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(data={"user_id": user_id, "is_admin": is_admin}, expires_delta=access_token_expires)
-    refresh_token_expires = timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
-    refresh_token = create_refresh_token(data={"user_id": user_id}, expires_delta=refresh_token_expires)
-
-    # Prepare session data
-    session_data = SessionCreate(
-        user_id=user_id,
-        session_token=access_token,
-        expires_at=datetime.utcnow() + access_token_expires,
-        is_valid=True
-    )
-    # Store session in the database
-    create_session(db, session_data)
-
-    return {
-        "access_token": access_token,
-        "refresh_token": refresh_token,
-        "token_type": "bearer",
-        "user_id": user_id,
-        "is_admin": is_admin
-    }
-    
     
 def get_user_data(user_id: str):
     response = requests.get(f"{USER_SERVICE_URL}/{user_id}")

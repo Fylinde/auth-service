@@ -1,14 +1,11 @@
 import logging
-from fastapi import FastAPI, Request, Depends, WebSocket
-from fastapi.staticfiles import StaticFiles
+from fastapi import FastAPI,  WebSocket
 from fastapi.middleware.cors import CORSMiddleware  # Import CORSMiddleware
 import pika
 from app.config import settings
 from app.routes.user_auth import router as user_router
 from app.routes.vendor_auth import router as vendor_router
-from app.database import engine, BaseModel  # Temporarily remove database initialization
-from app.security import get_current_user  # Import your security logic
-import os
+
 
 
 logging.basicConfig(level=logging.INFO)
@@ -54,7 +51,7 @@ async def websocket_endpoint(websocket: WebSocket):
 
 
 # Include routers for user and vendor authentication
-app.include_router(user_router, prefix="/auth/user", tags=["user-auth"])
+app.include_router(user_router, prefix="/auth", tags=["user-auth"])
 app.include_router(vendor_router, prefix="/auth/vendor", tags=["vendor-auth"])
 # Mount the auth router
 #app.include_router(user_router, prefix="/auth")

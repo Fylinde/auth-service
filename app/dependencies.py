@@ -1,4 +1,4 @@
-from sqlalchemy.orm import Session
+
 from app.database import SessionLocal
 from fastapi.security import OAuth2PasswordBearer
 
