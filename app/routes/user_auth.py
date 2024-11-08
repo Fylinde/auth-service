@@ -100,7 +100,7 @@ async def verify_email(
             
             if redirect:
                 # Redirect to frontend with tokens in the URL
-                frontend_url = f"http://localhost:3000/user-dashboard?access_token={access_token}&refresh_token={refresh_token}"
+                frontend_url = f"http://localhost:3000/register/user-dashboard?access_token={access_token}&refresh_token={refresh_token}"
                 return RedirectResponse(url=frontend_url)
 
             # Return tokens directly if not redirecting

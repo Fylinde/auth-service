@@ -16,7 +16,7 @@ logging.basicConfig(level=logging.INFO)
 SECRET_KEY = settings.SECRET_KEY
 ALGORITHM = settings.ALGORITHM
 ACCESS_TOKEN_EXPIRE_MINUTES = settings.ACCESS_TOKEN_EXPIRE_MINUTES
-USER_SERVICE_URL = "http://user-service/api/users"
+USER_SERVICE_URL = "http://user-service/users"
 
 # Create an instance of OAuth2PasswordBearer
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
