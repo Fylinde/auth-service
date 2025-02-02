@@ -1,7 +1,7 @@
 from app.database import BaseModel
 from app.models.user import UserModel
 #from app.models.admin import AdminModel
-from app.models.vendor import VendorModel
+from app.models.seller import SellerModel
 
 print(BaseModel.metadata.tables)  # This should now show your tables
 

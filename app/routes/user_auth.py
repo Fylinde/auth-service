@@ -22,7 +22,7 @@ from app.schemas.two_factor import Enable2FARequest, MessageResponse, OTPRequest
 from app.services.auth_login_service import get_user_by_contact, enable_user_2fa, disable_user_2fa, create_access_token, create_refresh_token
 from app.security import oauth2_scheme
 from app.utils.token_utils import get_user_id_from_token, generate_otp, generate_and_store_otp
-from app.utils.email_service import send_otp_to_contact 
+from app.utils.email_service import send_otp_to_contact
 from app.services.auth_login_service import verify_user_credentials
 from datetime import timedelta
 from app.config import settings
@@ -100,7 +100,7 @@ async def verify_email(
             
             if redirect:
                 # Redirect to frontend with tokens in the URL
-                frontend_url = f"http://localhost:3000/register/user-dashboard?access_token={access_token}&refresh_token={refresh_token}"
+                frontend_url = f"http://localhost:3000/user-dashboard?access_token={access_token}&refresh_token={refresh_token}"
                 return RedirectResponse(url=frontend_url)
 
             # Return tokens directly if not redirecting
@@ -166,7 +166,7 @@ def send_otp(
     save_otp_to_database(db, user_id, otp_code)
 
     # Send the OTP to the user
-    send_otp_to_contact(request.email or request.phone_number, otp_code)
+    send_otp_to_contact(request.email or request.phoneNumber, otp_code)
     
     return OTPResponse(otp_code=otp_code, expires_at=expires_at)
 
@@ -217,3 +217,5 @@ def logout(
 
     response = logout_user_service(db, request.session_token)
     return response
+
+

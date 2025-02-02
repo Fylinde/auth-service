@@ -175,7 +175,7 @@ def verify_2fa_and_issue_tokens(user_id: int, code: str, db: Session):
             "id": user_data['id'],
             "full_name": user_data['full_name'],
             "email": user_data['email'],
-            "phone_number": user_data['phone_number'],
+            "phoneNumber": user_data['phoneNumber'],
             "is_admin": user_data['is_admin'],
         }
     }

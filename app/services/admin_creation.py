@@ -8,8 +8,8 @@ USER_SERVICE_URL = "http://user-service/api/users"
 @click.option('--email', prompt='Admin email', help='The email for the admin user')
 @click.option('--password', prompt='Admin password', help='The password for the admin user', hide_input=True)
 @click.option('--full_name', prompt='Admin full name', help='The full name for the admin user')
-@click.option('--phone_number', prompt='Admin phone number', help='The phone number for the admin user')
-def create_admin(email, password, full_name, phone_number):
+@click.option('--phoneNumber', prompt='Admin phone Number', help='The phone number for the admin user')
+def create_admin(email, password, full_name, phoneNumber):
     """Create an admin user via CLI by calling the user-service API."""
     try:
         # Make an API call to user-service to create the admin
@@ -19,7 +19,7 @@ def create_admin(email, password, full_name, phone_number):
                 "email": email,
                 "password": password,
                 "full_name": full_name,
-                "phone_number": phone_number,
+                "phoneNumber": phoneNumber,
                 "is_admin": True
             }
         )

@@ -12,6 +12,7 @@ class OTPModel(BaseModel):
     
     id = Column(String, primary_key=True, index=True, default=lambda: str(uuid.uuid4()))
     user_id = Column(String, nullable=False, index=True)  # User identifier
+    sellerId = Column(String, nullable=False, index=True)  # User identifier
     otp_code = Column(String, nullable=False)  # The OTP code itself
     created_at = Column(DateTime, default=datetime.utcnow)  # Timestamp when OTP was created
 

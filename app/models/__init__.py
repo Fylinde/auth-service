@@ -3,11 +3,13 @@
 from app.models.session import SessionModel
 from app.database import BaseModel   # or Base if that's what your models inherit from
 from app.models.otp import OTPModel
+from app.models.verification_code import VerificationCodeModel
 
 #
 __all__ = ["SessionModel", 
            "BaseModel",  
-           "OTPModel" 
+           "OTPModel",
+           "VerificationCodeModel" 
    
            ]
 

@@ -3,6 +3,7 @@ from app.models.session import SessionModel  # Updated import to use SessionMode
 from app.schemas.session_schemas import SessionCreate
 import logging
 
+
 def create_session(db: Session, session: SessionCreate):
     """
     Create a new session for a logged-in user.

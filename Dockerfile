@@ -23,6 +23,11 @@ RUN apt-get update && apt-get install -y iputils-ping
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+
+# Install development tools for hot reload
+RUN pip install watchdog[watchmedo]
+
+
 # Install bcrypt
 RUN pip install bcrypt
 
@@ -43,7 +48,7 @@ COPY wait-for-it.sh /app/wait-for-it.sh
 RUN chmod +x /app/start.sh
 
 # Expose the port
-EXPOSE 8001
+EXPOSE 8000
 
 # Command to run the application
 CMD ["/app/start.sh"]

@@ -9,9 +9,9 @@ depends_on = None
 
 
 def upgrade():
-    # Add the full_name and phone_number columns
+    # Add the full_name and phoneNumber columns
     op.add_column('users', sa.Column('full_name', sa.String(length=255), nullable=False))
-    op.add_column('users', sa.Column('phone_number', sa.String(length=20), nullable=True))  # Added phone_number
+    op.add_column('users', sa.Column('phoneNumber', sa.String(length=20), nullable=True))  # Added phoneNumber
 
     # Optionally, update full_name for existing records where it might be NULL
     op.execute("""

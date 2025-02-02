@@ -2,7 +2,7 @@ from pydantic import BaseModel
 from datetime import datetime
 
 class SessionCreate(BaseModel):
-    user_id: int
+    user_id: str
     session_token: str
     expires_at: datetime
     is_valid: bool
@@ -12,7 +12,7 @@ class SessionCreate(BaseModel):
 
 class SessionResponse(BaseModel):
     id: int
-    user_id: int
+    user_id: str
     session_token: str
     created_at: datetime
     expires_at: datetime

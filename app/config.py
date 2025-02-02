@@ -28,6 +28,8 @@ class Settings:
     GMAIL_PASSWORD: str = os.getenv("GMAIL_PASSWORD", "mmzm fpjh opgh aozk")
     ADMIN_SECRET_KEY: str = os.getenv("ADMIN_SECRET_KEY", "7f1416bb80db4d393fecdc929ea8d0f82992ed49ecb773cb147136d3184ba70f")
     USER_SERVICE_URL = os.getenv("USER_SERVICE_URL", "http://user-service:8001/users")
+    VENDOR_SERVICE_URL = os.getenv("VENDOR_SERVICE_URL", "http://vendor-service:8012")
+    FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000/register/seller")
 
 
 settings = Settings()

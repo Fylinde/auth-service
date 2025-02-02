@@ -1,13 +1,13 @@
 # test_models.py
 
 from app.database import BaseModel, engine, TestingSessionLocal  # Correct import for BaseModel
-from app.models import UserModel, VendorModel, GroupModel, PermissionModel, CustomerNoteModel, CustomerEventModel, StaffNotificationRecipientModel, AddressModel
+from app.models import UserModel, SellerModel, GroupModel, PermissionModel, CustomerNoteModel, CustomerEventModel, StaffNotificationRecipientModel, AddressModel
 import pytest
 
 from app.models import (
     UserModel,
     Session,
-    VendorModel,
+    SellerModel,
     GroupModel,
     PermissionModel,
     CustomerNoteModel,
@@ -51,13 +51,13 @@ def test_create_user(db_session):
 
 
 def test_create_vendor(db_session):
-    vendor = VendorModel(name="Test Vendor", email="vendor@example.com", hashed_password="hashedpassword")
-    db_session.add(vendor)
+    seller = SellerModel(name="Test Vendor", email="vendor@example.com", hashed_password="hashedpassword")
+    db_session.add(seller)
     db_session.commit()
 
-    assert vendor.id is not None
-    assert vendor.name == "Test Vendor"
-    assert vendor.email == "vendor@example.com"
+    assert seller.id is not None
+    assert seller.name == "Test Vendor"
+    assert seller.email == "vendor@example.com"
 
 
 def test_create_group(db_session):

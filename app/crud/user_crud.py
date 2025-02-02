@@ -9,6 +9,9 @@ from app.models.otp import OTPModel  # This model is specifically for temporary 
 from app.config import settings
 import os
 
+
+
+
 logger = logging.getLogger(__name__)
 
 OTP_VALIDITY_DURATION = os.getenv("OTP_VALIDITY_DURATION", settings.OTP_VALIDITY_DURATION)
@@ -65,3 +68,4 @@ def verify_and_delete_otp(db: Session, user_id: str, otp_code: str):
         db.commit()
         return True
     return False
+

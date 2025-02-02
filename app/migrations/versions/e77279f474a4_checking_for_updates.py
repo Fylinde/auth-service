@@ -26,19 +26,19 @@ def upgrade():
     if 'users' in tables:
         conn.execute(text("DROP TABLE users CASCADE"))
 
-    # Drop 'vendors' table and associated indexes
-    if 'vendors' in tables:
-        indexes = [ix['name'] for ix in inspector.get_indexes('vendors')]
-        if 'ix_vendors_email' in indexes:
-            op.drop_index('ix_vendors_email', table_name='vendors')
-        if 'ix_vendors_id' in indexes:
-            op.drop_index('ix_vendors_id', table_name='vendors')
-        if 'ix_vendors_name' in indexes:
-            op.drop_index('ix_vendors_name', table_name='vendors')
-        conn.execute(text("DROP TABLE vendors CASCADE"))
+    # Drop 'sellers' table and associated indexes
+    if 'sellers' in tables:
+        indexes = [ix['name'] for ix in inspector.get_indexes('sellers')]
+        if 'ix_sellers_email' in indexes:
+            op.drop_index('ix_sellers_email', table_name='sellers')
+        if 'ix_sellers_id' in indexes:
+            op.drop_index('ix_sellers_id', table_name='sellers')
+        if 'ix_sellers_name' in indexes:
+            op.drop_index('ix_sellers_name', table_name='sellers')
+        conn.execute(text("DROP TABLE sellers CASCADE"))
 
 def downgrade():
-    # Recreate 'users' and 'vendors' tables, indexes, and the foreign key constraint on 'sessions'
+    # Recreate 'users' and 'sellers' tables, indexes, and the foreign key constraint on 'sessions'
     op.create_table('users',
         sa.Column('id', sa.INTEGER(), autoincrement=True, nullable=False),
         sa.Column('email', sa.VARCHAR(), autoincrement=False, nullable=False),
@@ -54,15 +54,15 @@ def downgrade():
         sa.Column('backup_codes', sa.ARRAY(sa.VARCHAR()), autoincrement=False, nullable=True),
         sa.Column('jwt_token_key', sa.VARCHAR(length=36), autoincrement=False, nullable=True),
         sa.Column('full_name', sa.VARCHAR(length=255), autoincrement=False, nullable=False),
-        sa.Column('phone_number', sa.VARCHAR(length=15), autoincrement=False, nullable=True),
+        sa.Column('phoneNumber', sa.VARCHAR(length=15), autoincrement=False, nullable=True),
         sa.Column('username', sa.VARCHAR(length=255), autoincrement=False, nullable=True),
         sa.PrimaryKeyConstraint('id', name='users_pkey'),
         sa.UniqueConstraint('email', name='users_email_key'),
-        sa.UniqueConstraint('phone_number', name='users_phone_number_key')
+        sa.UniqueConstraint('phoneNumber', name='users_phoneNumber_key')
     )
     op.create_index('ix_users_id', 'users', ['id'], unique=False)
 
-    op.create_table('vendors',
+    op.create_table('sellers',
         sa.Column('id', sa.INTEGER(), autoincrement=True, nullable=False),
         sa.Column('name', sa.VARCHAR(), autoincrement=False, nullable=False),
         sa.Column('description', sa.VARCHAR(), autoincrement=False, nullable=True),
@@ -71,11 +71,11 @@ def downgrade():
         sa.Column('hashed_password', sa.VARCHAR(), autoincrement=False, nullable=False),
         sa.Column('profile_picture', sa.VARCHAR(length=255), autoincrement=False, nullable=True),
         sa.Column('preferences', sa.VARCHAR(length=255), autoincrement=False, nullable=True),
-        sa.PrimaryKeyConstraint('id', name='vendors_pkey')
+        sa.PrimaryKeyConstraint('id', name='sellers_pkey')
     )
-    op.create_index('ix_vendors_name', 'vendors', ['name'], unique=False)
-    op.create_index('ix_vendors_id', 'vendors', ['id'], unique=False)
-    op.create_index('ix_vendors_email', 'vendors', ['email'], unique=True)
+    op.create_index('ix_sellers_name', 'sellers', ['name'], unique=False)
+    op.create_index('ix_sellers_id', 'sellers', ['id'], unique=False)
+    op.create_index('ix_sellers_email', 'sellers', ['email'], unique=True)
 
     # Restore the foreign key constraint for the sessions table
     op.create_foreign_key('sessions_user_id_fkey', 'sessions', 'users', ['user_id'], ['id'])

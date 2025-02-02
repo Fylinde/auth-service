@@ -2,6 +2,8 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import logging
+from app.utils.carrier_gateways import get_carrier_gateway
+from app.utils.phone_utils import validate_phone_number
 from itsdangerous import URLSafeTimedSerializer
 
 from app.config import settings
@@ -12,20 +14,17 @@ SECURITY_PASSWORD_SALT = settings.SECURITY_PASSWORD_SALT
 
 def send_email(to_email, subject, body):
     try:
-        # Set up the SMTP server
         smtp_server = "smtp.gmail.com"
         smtp_port = 587
         sender_email = settings.GMAIL_USER
         password = settings.GMAIL_PASSWORD
 
-        # Create a MIMEText object to represent the email
         msg = MIMEMultipart()
         msg['From'] = sender_email
         msg['To'] = to_email
         msg['Subject'] = subject
         msg.attach(MIMEText(body, 'plain'))
 
-        # Connect to the SMTP server and send the email
         server = smtplib.SMTP(smtp_server, smtp_port)
         server.starttls()
         server.login(sender_email, password)
@@ -35,6 +34,7 @@ def send_email(to_email, subject, body):
         logging.info(f"Email sent to {to_email} successfully.")
     except Exception as e:
         logging.error(f"Failed to send email to {to_email}. Error: {e}")
+
 
 # Handle password reset email
 def send_reset_email(to_email: str, reset_token: str):
@@ -63,14 +63,11 @@ def verify_password_reset_token(token, expiration=3600):
 
 # Assuming this is in auth-service/app/utils/email_utils.py
 
-def send_verification_email(to_email: str, verification_code: str):
-    subject = "Email Verification"
-    verification_link = f"http://localhost:8000/auth/verify?code={verification_code}"
-    body = (f"Please verify your email by clicking on the following link: {verification_link}\n\n"
-            f"Alternatively, you can enter the following verification code on the verification form: {verification_code}")
-
-    logging.info(f"Sending verification email to {to_email} with verification code {verification_code}")
+def send_verification_email(to_email: str, subject: str, body: str):
+    logging.info(f"Sending verification email to {to_email} with message: {body}")
     send_email(to_email, subject, body)
+    
+
 
 def send_otp_to_contact(contact: str, otp: str):
     if "@" in contact:
@@ -78,8 +75,29 @@ def send_otp_to_contact(contact: str, otp: str):
     else:
         send_sms_via_email(contact, otp)
         
-def send_sms_via_email(phone_number, otp, carrier_gateway):
-    recipient_email = f"{phone_number}@{carrier_gateway}"
-    subject = "Your OTP Code"
-    message_body = f"Your OTP code is {otp}"
-    send_email(recipient_email, subject, message_body)       
+def send_sms_via_email(phoneNumber: str, message_body: str, carrier: str = "AT&T"):
+    """
+    Sends an SMS via email gateway.
+    Validates the phone number and resolves the carrier gateway before sending.
+    """
+    # Validate the phone number
+    if not validate_phone_number(phoneNumber):
+        logging.error(f"Invalid phone number: {phoneNumber}")
+        return False
+
+    # Resolve the carrier gateway
+    carrier_gateway = get_carrier_gateway(carrier)
+    recipient_email = f"{phoneNumber}@{carrier_gateway}"
+
+    # Compose the SMS
+    subject = "Your Verification Code"
+    logging.info(f"Sending SMS to {recipient_email} with message: {message_body}")
+
+    try:
+        send_email(recipient_email, subject, message_body)
+        logging.info(f"SMS sent successfully to {phoneNumber} via {carrier}")
+        return True
+    except Exception as e:
+        logging.error(f"Failed to send SMS to {phoneNumber} via {carrier}: {e}", exc_info=True)
+        return False
+     

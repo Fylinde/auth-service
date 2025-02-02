@@ -24,3 +24,7 @@ typing-extensions
 pika
 Werkzeug
 uuid
+tenacity
+phonenumbers
+watchdog 
+uvicorn

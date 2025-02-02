@@ -18,12 +18,12 @@ class TokenResponse(BaseModel):
     user_id: str
     full_name: str
     email: str
-    phone_number: str
+    phoneNumber: str
     is_admin: bool
         
 class TokenData(BaseModel):
     user_id: Optional[int] = None
     full_name: Optional[str] = None  # These fields are optional and will be fetched via user-service
-    phone_number: Optional[str] = None
+    phoneNumber: Optional[str] = None
     is_admin: Optional[bool] = None
     two_factor: Optional[bool] = None

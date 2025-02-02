@@ -22,9 +22,9 @@ def create_session_token() -> str:
     """
     return secrets.token_hex(16)
 
-def generate_verification_code(length=6):
+def generate_verification_code(length=8):
     """
-    Generate a random numeric verification code.
+    Generate a random numeric verification code of the given length.
     """
     digits = string.digits
     return ''.join(random.choices(digits, k=length))

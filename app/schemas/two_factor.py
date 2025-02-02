@@ -29,7 +29,7 @@ class TwoFactorEnableRequest(BaseModel):
 
 class OTPRequest(BaseModel):
     email: Optional[EmailStr] = None
-    phone_number: Optional[str] = None
+    phoneNumber: Optional[str] = None
     carrier_gateway: Optional[str] = None
 
 class OTPVerifyRequest(BaseModel):
