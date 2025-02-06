@@ -14,6 +14,7 @@ from app.utils.verification_service import send_verification
 from app.utils.token_utils import generate_verification_code
 from app.models.verification_code import VerificationCodeModel
 import traceback
+from sqlalchemy.exc import OperationalError
 
 SECRET_KEY = os.getenv("SECRET_KEY", settings.SECRET_KEY)
 OTP_VALIDITY_DURATION = int(os.getenv("OTP_VALIDITY_DURATION", "300"))
@@ -25,67 +26,88 @@ router = APIRouter()
 
 @router.post("/generate-verification-code")
 async def generate_and_send_verification_code(payload: VerificationPayload = Body(...), db: Session = Depends(get_db)):
+    """
+    Generates or retrieves a verification code for a seller and sends it via email/SMS.
+    """
+
     try:
-        logging.info(f"[generate_and_send_verification_code] Received payload: {payload.dict()}")
+        logging.info(f"📩 Received request: {payload.dict()}")
 
         contact = payload.contact
         is_email = payload.is_email
         sellerId = payload.sellerId
         seller_type = payload.seller_type
-        
-         # Validate sellerId
-        logging.info(f"[generate_and_send_verification_code] Validating sellerId: {sellerId}")
+
+        # ✅ Step 1: Validate Inputs
         if not isinstance(sellerId, str):
-            logging.error(f"[generate_and_send_verification_code] Invalid sellerId received: {sellerId}")
+            logging.error(f"❌ Invalid sellerId format: {sellerId}")
             raise HTTPException(status_code=400, detail="Invalid sellerId. Must be a string.")
         
-        # Validate contact
         if not contact:
-            logging.error("[generate_and_send_verification_code] Missing contact information")
+            logging.error("❌ Missing contact information (email or phone).")
             raise HTTPException(status_code=400, detail="Contact is required.")
 
-        existing_code = db.query(VerificationCodeModel).filter(
-            VerificationCodeModel.sellerId == sellerId,
-            VerificationCodeModel.is_email == is_email,
-            VerificationCodeModel.expires_at > datetime.utcnow()
-        ).first()
+        logging.info(f"🔎 Checking if existing verification code exists for seller {sellerId}")
 
+        # ✅ Step 2: Check for Existing Code (Retry on DB Failure)
+        retry_count = 0
+        while retry_count < 3:
+            try:
+                existing_code = db.query(VerificationCodeModel).filter(
+                    VerificationCodeModel.sellerId == sellerId,
+                    VerificationCodeModel.is_email == is_email,
+                    VerificationCodeModel.expires_at > datetime.utcnow()
+                ).first()
+                break  # ✅ Success, exit retry loop
+            except OperationalError as db_error:
+                retry_count += 1
+                logging.warning(f"⚠️ Database error (Attempt {retry_count}/3): {db_error}")
+                if retry_count == 3:
+                    logging.critical("🚨 Database connection failed after 3 attempts.")
+                    raise HTTPException(status_code=500, detail="Database connection issue. Please try again.")
+
+        # ✅ Step 3: Use Existing Code or Generate a New One
         if existing_code:
-            
-            
             verification_code = existing_code.code
-            logging.info(f"[generate_and_send_verification_code] Reusing existing verification code: {verification_code}")
+            logging.info(f"🔄 Reusing existing verification code: {verification_code}")
         else:
-            # Generate new verification code 
             verification_code = generate_verification_code()
             expiration_time = datetime.utcnow() + timedelta(seconds=OTP_VALIDITY_DURATION)
-           
-            # Store the new code
-            logging.info(f"[generate_and_send_verification_code] Storing new verification code: {verification_code}")
-            store_verification_code(
-                db=db,
-                code=verification_code,
-                expiration=expiration_time,
-                is_email=is_email,
-                email=contact if is_email else None,
-                phoneNumber=contact if not is_email else None,
-                sellerId=sellerId
-            )
-        # Send verification code
-        logging.info(f"[generate_and_send_verification_code] Sending verification code to {contact}")
+            logging.info(f"🆕 Generated new verification code: {verification_code}")
+
+            # ✅ Step 4: Store the New Code in the Database
+            try:
+                store_verification_code(
+                    db=db,
+                    code=verification_code,
+                    expiration=expiration_time,
+                    is_email=is_email,
+                    email=contact if is_email else None,
+                    phoneNumber=contact if not is_email else None,
+                    sellerId=sellerId
+                )
+                logging.info("✅ New verification code stored successfully.")
+            except OperationalError as db_error:
+                logging.error(f"❌ Database error while storing verification code: {db_error}")
+                raise HTTPException(status_code=500, detail="Database error while storing verification code.")
+
+        # ✅ Step 5: Send Verification Code
+        logging.info(f"📤 Sending verification code to {contact}")
         sent_successfully = send_verification(contact, verification_code, seller_type, is_email)
 
         if not sent_successfully:
-            logging.error(f"[generate_and_send_verification_code] Failed to send verification code to {contact}")
+            logging.error(f"❌ Failed to send verification code to {contact}")
             raise HTTPException(status_code=500, detail="Failed to send verification code")
-        logging.info(f"[generate_and_send_verification_code] Successfully sent verification code: {verification_code}")
+
+        logging.info(f"✅ Verification code {verification_code} sent successfully to {contact}")
         
         return {"message": "Verification code sent successfully", "verification_code": verification_code}
+
     except HTTPException as e:
-        logging.error(f"[generate_and_send_verification_code] HTTPException: {e.detail}")
+        logging.error(f"🚨 HTTP Exception: {e.detail}")
         raise e
     except Exception as e:
-        logging.error(f"[generate_and_send_verification_code] Unexpected error: {e}", exc_info=True)
+        logging.error(f"❌ Unexpected error in verification: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Failed to generate verification code")
 
 # @router.post("/generate-verification-code")
